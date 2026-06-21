@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US State Corporate Tax Apportionment Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --surface2: #f2f0ec;
+    --border: #e4e1db;
+    --border2: #ccc9c1;
+    --text: #1a1916;
+    --text2: #6b6860;
+    --text3: #9c9a94;
+    --blue: #1a56db;
+    --blue-bg: #eff4ff;
+    --blue-text: #1e429f;
+    --purple: #6c35de;
+    --purple-bg: #f0ebff;
+    --purple-text: #4a1d96;
+    --green: #057a55;
+    --green-bg: #ecfdf5;
+    --green-text: #014737;
+    --amber: #b45309;
+    --amber-bg: #fffbeb;
+    --amber-text: #78350f;
+    --coral: #c0392b;
+    --coral-bg: #fff5f5;
+    --coral-text: #7b1111;
+    --gray-bg: #f1f0ed;
+    --gray-text: #4b4a47;
+    --accent: #1a56db;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111110;
+      --surface: #1c1c1a;
+      --surface2: #252522;
+      --border: #2e2e2b;
+      --border2: #3d3d39;
+      --text: #f0ede8;
+      --text2: #9c9a94;
+      --text3: #6b6860;
+      --blue-bg: #1e3a8a22;
+      --blue-text: #93c5fd;
+      --purple-bg: #4a1d9622;
+      --purple-text: #c4b5fd;
+      --green-bg: #01473722;
+      --green-text: #6ee7b7;
+      --amber-bg: #78350f22;
+      --amber-text: #fcd34d;
+      --coral-bg: #7b111122;
+      --coral-text: #fca5a5;
+      --gray-bg: #2e2e2b;
+      --gray-text: #d1cfc9;
+    }
+  }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+  .page-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .header-title { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+  .header-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .header-badge { font-size: 11px; background: var(--blue-bg); color: var(--blue-text); border-radius: 99px; padding: 3px 10px; font-weight: 500; }
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+  .inputs-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 20px; }
+  .inputs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .inp-group { display: flex; flex-direction: column; gap: 5px; }
+  .inp-group label { font-size: 12px; color: var(--text2); font-weight: 500; }
+  .inp-group input { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--text); outline: none; transition: border-color 0.15s; }
+  .inp-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,0.1); }
+  .inp-group input::placeholder { color: var(--text3); }
+  .summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .s-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .s-card .lbl { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .s-card .val { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; font-family: 'JetBrains Mono', monospace; }
+  .s-card .val.accent { color: var(--accent); }
+  .controls-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .controls-bar input[type=text], .controls-bar select { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 12px; font-size: 13px; color: var(--text); outline: none; font-family: 'Inter', sans-serif; }
+  .controls-bar input[type=text] { flex: 1; min-width: 160px; }
+  .controls-bar input[type=text]:focus, .controls-bar select:focus { border-color: var(--accent); }
+  .btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 14px; font-size: 12px; font-weight: 500; color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.15s, border-color 0.15s; font-family: 'Inter', sans-serif; }
+  .btn:hover { background: var(--surface2); border-color: var(--border2); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { background: #1447c0; }
+  .legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; letter-spacing: 0.02em; }
+  .badge.ssf { background: var(--blue-bg); color: var(--blue-text); }
+  .badge.dw { background: var(--purple-bg); color: var(--purple-text); }
+  .badge.f3 { background: var(--green-bg); color: var(--green-text); }
+  .badge.tri { background: var(--amber-bg); color: var(--amber-text); }
+  .badge.gr { background: var(--coral-bg); color: var(--coral-text); }
+  .badge.no { background: var(--gray-bg); color: var(--gray-text); }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .tbl-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; padding: 11px 14px; text-align: left; background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
+  tbody tr.no-tax td { color: var(--text3); }
+  .state-name { font-weight: 500; font-size: 13px; }
+  .note-icon { font-size: 10px; color: var(--text3); margin-left: 3px; cursor: help; }
+  .state-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--text); outline: none; width: 100px; transition: border-color 0.15s; }
+  .state-input:focus { border-color: var(--accent); }
+  .state-input:disabled, .state-input.dimmed { opacity: 0.3; cursor: not-allowed; }
+  .pct-wrap { display: flex; align-items: center; gap: 8px; }
+  .bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 99px; overflow: hidden; min-width: 60px; }
+  .bar-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width 0.25s ease; }
+  .pct-label { font-size: 12px; font-family: 'JetBrains Mono', monospace; min-width: 52px; text-align: right; color: var(--text); }
+  .income-val { font-size: 13px; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+  .income-val.positive { color: var(--text); }
+  .income-val.zero { color: var(--text3); }
+  .no-results { padding: 40px; text-align: center; color: var(--text2); font-size: 14px; }
+  .footer { text-align: center; font-size: 11px; color: var(--text3); margin-top: 40px; line-height: 1.8; }
+  .footer a { color: var(--text2); }
+  @media (max-width: 700px) {
+    .page-header { padding: 16px; }
+    .main { padding: 16px 12px 40px; }
+    .inputs-section { padding: 16px; }
+    thead th:nth-child(4), thead th:nth-child(5), tbody td:nth-child(4), tbody td:nth-child(5) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div>
+    <div class="header-title">US State Corporate Tax Apportionment Simulator</div>
+    <div class="header-sub">All 50 states — sourced from FTA January 2023 official publication</div>
+  </div>
+  <span class="header-badge">General manufacturing &amp; commercial businesses</span>
+</header>
+
+<main class="main">
+
+  <div class="inputs-section">
+    <div class="section-label">Nationwide totals</div>
+    <div class="inputs-grid">
+      <div class="inp-group">
+        <label for="tot-sales">Total sales (revenue) $</label>
+        <input type="number" id="tot-sales" placeholder="e.g. 10000000" oninput="recalc()">
+      </div>
+      <div class="inp-group">
+        <label for="tot-payroll">Total payroll $</label>
+        <input type="number" id="tot-payroll" placeholder="e.g. 3000000" oninput="recalc()">
+      </div>
+      <div class="inp-group">
+        <label for="tot-property">Total property $</label>
+        <input type="number" id="tot-property" placeholder="e.g. 5000000" oninput="recalc()">
+      </div>
+      <div class="inp-group">
+        <label for="tot-income">Total net income $</label>
+        <input type="number" id="tot-income" placeholder="e.g. 2000000" oninput="recalc()">
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-row" id="summary-row">
+    <div class="s-card"><div class="lbl">Total net income</div><div class="val accent" id="s-income">—</div></div>
+    <div class="s-card"><div class="lbl">States with exposure</div><div class="val" id="s-states">—</div></div>
+    <div class="s-card"><div class="lbl">Highest apportionment %</div><div class="val" id="s-high-pct">—</div></div>
+    <div class="s-card"><div class="lbl">Highest income state</div><div class="val" id="s-high-state" style="font-size:15px;">—</div></div>
+  </div>
+
+  <div class="controls-bar">
+    <input type="text" id="search-state" placeholder="Search state..." oninput="renderTable()">
+    <select id="filter-formula" onchange="renderTable()">
+      <option value="">All formulas</option>
+      <option value="SSF">Single sales factor (SSF)</option>
+      <option value="DW">Double-weighted sales (DW)</option>
+      <option value="3F">Equal 3-factor (3F)</option>
+      <option value="TRI">Triple-weighted sales (TRI)</option>
+      <option value="GR">Gross receipts (GR)</option>
+      <option value="NO">No income tax (NO)</option>
+    </select>
+    <select id="sort-col" onchange="renderTable()">
+      <option value="state">Sort: state name</option>
+      <option value="pct">Sort: apportionment %</option>
+      <option value="income">Sort: apportioned income</option>
+    </select>
+    <button class="btn primary" onclick="exportCSV()">&#8595; Export CSV</button>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="badge ssf">SSF</span> Single sales only</span>
+    <span class="legend-item"><span class="badge dw">DW</span> Double-weighted sales</span>
+    <span class="legend-item"><span class="badge f3">3F</span> Equal 3-factor</span>
+    <span class="legend-item"><span class="badge tri">TRI</span> Triple-weighted sales</span>
+    <span class="legend-item"><span class="badge gr">GR</span> Gross receipts tax</span>
+    <span class="legend-item"><span class="badge no">NO</span> No income tax</span>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:150px">State</th>
+          <th style="width:80px">Formula</th>
+          <th style="width:120px">In-state sales $</th>
+          <th style="width:120px">In-state payroll $</th>
+          <th style="width:120px">In-state property $</th>
+          <th style="width:180px">Apportionment %</th>
+          <th style="width:140px">Apportioned income</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-body"></tbody>
+    </table>
+    <div id="no-results" class="no-results" style="display:none;">No states match your filter.</div>
+  </div>
+
+  <div class="footer">
+    Source: Federation of Tax Administrators (FTA) — January 2023 official publication.<br>
+    Formulas shown are for general manufacturing and commercial businesses. Certain industries (financial institutions, transportation, broadcasting, extractive industries) may have different rules in specific states.<br>
+    This tool is for reference only and does not constitute tax advice. Consult a qualified tax professional for filing positions.<br><br>
+    Built with the US State Corporate Tax Apportionment Simulator.
+  </div>
+
+</main>
+
+<script>
+const STATES = [
+  {name:'Alabama',formula:'SSF',note:''},
+  {name:'Alaska',formula:'3F',note:''},
+  {name:'Arizona',formula:'SSF',note:'SSF or double-weighted — taxpayer election'},
+  {name:'Arkansas',formula:'SSF',note:''},
+  {name:'California',formula:'SSF',note:''},
+  {name:'Colorado',formula:'SSF',note:''},
+  {name:'Connecticut',formula:'SSF',note:''},
+  {name:'Delaware',formula:'SSF',note:''},
+  {name:'Florida',formula:'DW',note:''},
+  {name:'Georgia',formula:'SSF',note:''},
+  {name:'Hawaii',formula:'3F',note:''},
+  {name:'Idaho',formula:'SSF',note:''},
+  {name:'Illinois',formula:'SSF',note:''},
+  {name:'Indiana',formula:'SSF',note:''},
+  {name:'Iowa',formula:'SSF',note:''},
+  {name:'Kansas',formula:'3F',note:''},
+  {name:'Kentucky',formula:'SSF',note:''},
+  {name:'Louisiana',formula:'SSF',note:''},
+  {name:'Maine',formula:'SSF',note:''},
+  {name:'Maryland',formula:'SSF',note:''},
+  {name:'Massachusetts',formula:'SSF',note:'SSF for most; double-weighted available for certain industries'},
+  {name:'Michigan',formula:'SSF',note:''},
+  {name:'Minnesota',formula:'SSF',note:''},
+  {name:'Mississippi',formula:'SSF',note:'SSF as default; special formulas for certain industries'},
+  {name:'Missouri',formula:'SSF',note:''},
+  {name:'Montana',formula:'DW',note:''},
+  {name:'Nebraska',formula:'SSF',note:''},
+  {name:'Nevada',formula:'GR',note:'Commerce tax (gross receipts) — no net income tax'},
+  {name:'New Hampshire',formula:'SSF',note:'Business profits tax uses SSF; business enterprise tax uses 3-factor'},
+  {name:'New Jersey',formula:'SSF',note:''},
+  {name:'New Mexico',formula:'3F',note:'3-factor or SSF — taxpayer option for certain activities'},
+  {name:'New York',formula:'SSF',note:''},
+  {name:'North Carolina',formula:'SSF',note:''},
+  {name:'North Dakota',formula:'3F',note:'3-factor or SSF — taxpayer option'},
+  {name:'Ohio',formula:'GR',note:'Commercial activity tax (gross receipts) — no net income tax'},
+  {name:'Oklahoma',formula:'3F',note:''},
+  {name:'Oregon',formula:'SSF',note:''},
+  {name:'Pennsylvania',formula:'SSF',note:''},
+  {name:'Rhode Island',formula:'SSF',note:''},
+  {name:'South Carolina',formula:'SSF',note:''},
+  {name:'South Dakota',formula:'NO',note:'No corporate income tax'},
+  {name:'Tennessee',formula:'TRI',note:'Triple-weighted sales factor (3x sales + payroll + property divided by 5)'},
+  {name:'Texas',formula:'GR',note:'Margin tax (gross receipts) — no net income tax'},
+  {name:'Utah',formula:'SSF',note:''},
+  {name:'Vermont',formula:'SSF',note:''},
+  {name:'Virginia',formula:'DW',note:'Double-weighted or SSF — taxpayer election'},
+  {name:'Washington',formula:'GR',note:'Business and occupation tax (gross receipts) — no net income tax'},
+  {name:'West Virginia',formula:'SSF',note:''},
+  {name:'Wisconsin',formula:'SSF',note:''},
+  {name:'Wyoming',formula:'NO',note:'No corporate income tax'},
+];
+
+let stateData = {};
+STATES.forEach(s => { stateData[s.name] = {sales:0,payroll:0,property:0}; });
+
+function fmt(n) {
+  if (n === null || isNaN(n)) return '—';
+  return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
+}
+function fmtPct(n) {
+  if (n === null || isNaN(n)) return '—';
+  return n.toFixed(2) + '%';
+}
+function getInp() {
+  return {
+    totSales: parseFloat(document.getElementById('tot-sales').value)||0,
+    totPayroll: parseFloat(document.getElementById('tot-payroll').value)||0,
+    totProperty: parseFloat(document.getElementById('tot-property').value)||0,
+    totIncome: parseFloat(document.getElementById('tot-income').value)||0,
+  };
+}
+function calcPct(formula, sd, inp) {
+  if (formula==='NO'||formula==='GR') return null;
+  const sf = inp.totSales > 0 ? sd.sales/inp.totSales : 0;
+  const pf = inp.totPayroll > 0 ? sd.payroll/inp.totPayroll : 0;
+  const prf = inp.totProperty > 0 ? sd.property/inp.totProperty : 0;
+  if (formula==='SSF') return sf*100;
+  if (formula==='3F') return ((sf+pf+prf)/3)*100;
+  if (formula==='DW') return ((sf*2+pf+prf)/4)*100;
+  if (formula==='TRI') return ((sf*3+pf+prf)/5)*100;
+  return null;
+}
+function badgeClass(f) { return {SSF:'ssf',DW:'dw','3F':'f3',TRI:'tri',GR:'gr',NO:'no'}[f]||'no'; }
+
+function recalc() {
+  const inp = getInp();
+  let exposed=0, highPct=0, highState='—';
+  STATES.forEach(s => {
+    const pct = calcPct(s.formula, stateData[s.name], inp);
+    if (pct !== null && pct > 0) { exposed++; if (pct>highPct){highPct=pct;highState=s.name;} }
+  });
+  document.getElementById('s-income').textContent = inp.totIncome > 0 ? fmt(inp.totIncome) : '—';
+  document.getElementById('s-states').textContent = exposed > 0 ? exposed : '—';
+  document.getElementById('s-high-pct').textContent = highPct > 0 ? fmtPct(highPct) : '—';
+  document.getElementById('s-high-state').textContent = highState;
+  renderTable();
+}
+
+function renderTable() {
+  const inp = getInp();
+  const search = document.getElementById('search-state').value.toLowerCase();
+  const filterF = document.getElementById('filter-formula').value;
+  const sortCol = document.getElementById('sort-col').value;
+
+  let rows = STATES.map(s => {
+    const sd = stateData[s.name];
+    const pct = calcPct(s.formula, sd, inp);
+    const income = (pct!==null && inp.totIncome>0) ? (pct/100)*inp.totIncome : null;
+    return {...s, sd, pct, income};
+  });
+
+  if (search) rows = rows.filter(r => r.name.toLowerCase().includes(search));
+  if (filterF) rows = rows.filter(r => r.formula===filterF);
+  if (sortCol==='pct') rows.sort((a,b)=>(b.pct??-1)-(a.pct??-1));
+  else if (sortCol==='income') rows.sort((a,b)=>(b.income??-1)-(a.income??-1));
+  else rows.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const maxPct = Math.max(...rows.map(r=>r.pct??0), 0.01);
+  const tbody = document.getElementById('tbl-body');
+  document.getElementById('no-results').style.display = rows.length===0 ? '' : 'none';
+  if (rows.length===0) { tbody.innerHTML=''; return; }
+
+  const salesOnly = f => f==='SSF'||f==='GR'||f==='NO';
+
+  tbody.innerHTML = rows.map(r => {
+    const isNoTax = r.formula==='NO'||r.formula==='GR';
+    const barW = r.pct!==null ? Math.min((r.pct/maxPct)*100,100).toFixed(1) : 0;
+    const dimmed = salesOnly(r.formula) ? ' dimmed' : '';
+    const noteHtml = r.note ? ` <span class="note-icon" title="${r.note}">ⓘ</span>` : '';
+    return `<tr class="${isNoTax?'no-tax':''}">
+      <td><span class="state-name">${r.name}</span>${noteHtml}</td>
+      <td><span class="badge ${badgeClass(r.formula)}">${r.formula}</span></td>
+      <td><input class="state-input" type="number" placeholder="0" value="${r.sd.sales||''}" oninput="stateData['${r.name}'].sales=parseFloat(this.value)||0;recalc()"></td>
+      <td><input class="state-input${dimmed}" type="number" placeholder="0" value="${r.sd.payroll||''}" ${salesOnly(r.formula)?'disabled':''} oninput="stateData['${r.name}'].payroll=parseFloat(this.value)||0;recalc()"></td>
+      <td><input class="state-input${dimmed}" type="number" placeholder="0" value="${r.sd.property||''}" ${salesOnly(r.formula)?'disabled':''} oninput="stateData['${r.name}'].property=parseFloat(this.value)||0;recalc()"></td>
+      <td>${r.pct!==null
+        ? `<div class="pct-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${barW}%"></div></div><span class="pct-label">${fmtPct(r.pct)}</span></div>`
+        : `<span style="font-size:11px;color:var(--text3)">${r.formula==='NO'?'No income tax':'Gross receipts'}</span>`
+      }</td>
+      <td><span class="income-val ${r.income&&r.income>0?'positive':'zero'}">${r.income&&r.income>0?fmt(r.income):'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCSV() {
+  const inp = getInp();
+  const rows = [['State','Formula','In-State Sales','In-State Payroll','In-State Property','Apportionment %','Apportioned Income ($)']];
+  STATES.forEach(s => {
+    const sd = stateData[s.name];
+    const pct = calcPct(s.formula, sd, inp);
+    const income = (pct!==null&&inp.totIncome>0) ? ((pct/100)*inp.totIncome).toFixed(2) : 'N/A';
+    rows.push([s.name, s.formula, sd.sales||0, sd.payroll||0, sd.property||0, pct!==null?pct.toFixed(4)+'%':'N/A', income]);
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'state_apportionment.csv';
+  a.click();
+}
+
+renderTable();
+</script>
+</body>
+</html>
